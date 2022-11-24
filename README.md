@@ -331,7 +331,7 @@ model.fit(X_train, y_train)
 ```
 
 # 4. Predict And Calculate The Score
-Actually, the model has a high score as 98.09, so I suspect there may be a data leak or the way of feature engineering can be improved. For example, the number of passegners for different ages may vary a lot, so I can split ages into groups, instead of remaining it as a continious data. Also, I can add new features like family size, to combine the feature of **Sibsp** and **Parch**, instead of viewing these two features separately. And improvement of data preprocessing and that of the accuracy of the model will on ongoing.
+Actually, the model has a high score as 98.09, so I suspect there may be a data leak or the way of feature engineering can be improved. For example, the number of passegners for different ages may vary a lot, so I can split ages into groups, instead of remaining it as continious data. Also, I can add new features like family size, to combine the feature of **Sibsp** and **Parch**, instead of viewing these two features separately. An improvement of data preprocessing and that of the accuracy of the model will on ongoing.
 
 ```
 predict = model.predict(X_test)
