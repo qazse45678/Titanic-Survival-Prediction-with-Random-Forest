@@ -147,3 +147,196 @@ pd.DataFrame(train_data[['Sex', 'Survived']].groupby(['Sex'], as_index = False).
 ```
 <img width="144" alt="image" src="https://user-images.githubusercontent.com/63503783/203754613-0c1b4508-e287-4ba7-971a-514e2d3c1738.png">
 
+Passengers who have more than 3 siblings or spouses have less chance of survival. Among those who have less than 3 siblings or spouses, the surviving rate is highest with 1 sibling or spouse and lowest when they don't have any.
+
+```
+pd.DataFrame(train_data[['SibSp', 'Survived']]).groupby(['SibSp']).mean().sort_values(by = ['Survived'], ascending = False)
+```
+<img width="124" alt="image" src="https://user-images.githubusercontent.com/63503783/203755112-23292579-ef4d-4f26-9641-e561ac1e599e.png">
+
+Passengers who have more than 4 parents or children are rarely survived. Those who have less than 4 parents or children: they have lowest surviving rate with 0 parents and children and over 50% surviving rate with 1 to 3 parents or children.
+
+```
+pd.DataFrame(train_data[['Parch', 'Survived']]).groupby('Parch').mean().sort_values(by = ['Survived'], ascending = False)
+```
+<img width="122" alt="image" src="https://user-images.githubusercontent.com/63503783/203755220-7b4abe6b-942c-4706-a4c5-9d0ea7f56a6f.png">
+
+- Infants (Age <=4) had high survival rate.
+- Oldest passengers (Age = 80) survived.
+- Large number of 15-25 year olds did not survive.
+- Most passengers are in 15-35 age range.
+
+```
+sns.FacetGrid(train_data, col = 'Survived').map(plt.hist, 'Age', bins = 20)
+```
+<img width="438" alt="image" src="https://user-images.githubusercontent.com/63503783/203755414-77ce34f6-a25c-48d2-bfc1-f5c26ef4e425.png">
+
+In general, Pclass 1 has the highest surviving rate, while Pclass 3 has the lowest one.
+
+```
+pd.DataFrame(train_data[['Pclass', 'Survived']]).groupby(['Pclass']).mean().sort_values(by = ['Survived'], ascending = False)
+```
+<img width="128" alt="image" src="https://user-images.githubusercontent.com/63503783/203755504-f3ecb5d2-8abd-434d-9c67-acd67112fc38.png">
+
+Let's compare the survival with **Age** in each Pclass. 
+
+- In Pclass 1, where the surviving rate is the highest among all, passengers who didn't survived don't show particular trend of age. In the same class, passengers who survived were mostly 30~40 years old.
+
+- In Pclass 2 and 3, most of the passengers who didn't survive were between 20~40 years old. It may be because most of the passengers lie in the range of age.
+
+- Pclass 3 has the most passengers, however, most of them didn't survive.
+
+```
+grid = sns.FacetGrid(train_data, col='Survived', row='Pclass')
+grid.map(plt.hist, 'Age', bins=20)
+```
+<img width="434" alt="image" src="https://user-images.githubusercontent.com/63503783/203755637-cfc4c4bf-dfad-4919-81c5-0172e1de0e62.png">
+
+- Female have higher surviving rate than male, except for Embarked C.
+
+```
+grid = sns.FacetGrid(train_data, row='Embarked')
+grid.map(sns.pointplot, 'Pclass', 'Survived', 'Sex', palette='deep')
+```
+<img width="377" alt="image" src="https://user-images.githubusercontent.com/63503783/203755747-75efca1b-56a9-4b5d-8079-e68c1307b3ed.png">
+
+Passengers who have higher **Fare** has higher surviving rate.
+```
+grid = sns.FacetGrid(train_data, row='Embarked', col='Survived')
+grid.map(sns.barplot, 'Sex', 'Fare', ci = None)
+```
+<img width="441" alt="image" src="https://user-images.githubusercontent.com/63503783/203755871-8bb2195f-814c-4656-ae95-374e62784350.png">
+
+## Clean Missing Values
+Find which feature has missing value and the number of missing values.
+
+```
+missing_values = train_data.isnull().sum().sort_values(ascending = False)
+missing_values[missing_values > 0]
+```
+<img width="145" alt="image" src="https://user-images.githubusercontent.com/63503783/203755972-95df5695-8167-4e4f-a568-11584051d206.png">
+
+Drop **Cabin** because there are too many missing values within
+
+```
+train_data = train_data.drop(['Cabin'], axis = 1)
+```
+
+Drop **Name, Ticket** because they don't affect the result.
+
+```
+train_data = train_data.drop(['Name', 'Ticket'], axis = 1)
+```
+
+Impute mean into the missing values of **Age**.
+
+```
+numerical_transformer = SimpleImputer(strategy = 'mean')
+Age = train_data['Age'].values.reshape(-1,1)
+
+imputed_age = numerical_transformer.fit_transform(Age)
+train_data['Age'] = imputed_age
+```
+
+Impute most frequent value into the missing values of **Embarked**.
+
+```
+cat_transformer = SimpleImputer(strategy = 'most_frequent')
+embarked = train_data['Embarked'].values.reshape(-1,1)
+
+imputed_embarked = cat_transformer.fit_transform(embarked)
+train_data['Embarked'] = imputed_embarked
+```
+
+Repeat the above steps to clean **Test** dataset.
+
+```
+test_data = test_data.drop(['Cabin'], axis = 1)
+
+test_data = test_data.drop(['Name', 'Ticket'], axis = 1)
+
+numerical_transformer = SimpleImputer(strategy = 'mean')
+Age = test_data['Age'].values.reshape(-1,1)
+imputed_age_test = numerical_transformer.fit_transform(Age)
+test_data['Age'] = imputed_age_test
+
+cat_transformer = SimpleImputer(strategy = 'most_frequent')
+embarked = test_data['Embarked'].values.reshape(-1,1)
+imputed_embarked_test = cat_transformer.fit_transform(embarked)
+test_data['Embarked'] = imputed_embarked_test
+```
+
+Impute missing value for **Fare** in Test dataset.
+
+```
+numerical_transformer = SimpleImputer(strategy = 'mean')
+Fare = test_data['Fare'].values.reshape(-1,1)
+imputed_fare_test = numerical_transformer.fit_transform(Fare)
+test_data['Fare'] = imputed_fare_test
+```
+
+Merge train and test data sets together.
+
+```
+train_data = train_data.drop('PassengerId', axis = 1)
+merge = [train_data, test_data]
+```
+
+## transform categorical value
+Map the two types of value, female and male, in **"Sex"** column as 0 and 1.
+
+```
+for dataset in merge:
+    dataset['Sex'] = dataset['Sex'].map({
+        'female': 0,
+        'male': 1
+    })
+    
+train_data.head()
+```
+<img width="448" alt="image" src="https://user-images.githubusercontent.com/63503783/203756634-41d9366e-828c-4c8c-afa8-15aaa9b79df5.png">
+
+Find the total types of values in **'Embarked'** and transform them into numerical data.
+
+```
+print(train_data['Embarked'].unique())
+print(test_data['Embarked'].unique())
+```
+<img width="117" alt="image" src="https://user-images.githubusercontent.com/63503783/203756716-43b3ce4b-36bd-4b8a-ab4b-e806cb6e6d4d.png">
+
+```
+for dataset in merge:
+    dataset['Embarked'] = dataset['Embarked'].map({
+        'S': 0,
+        'C': 1,
+        'Q': 2
+    })
+
+train_data.head()
+```
+<img width="446" alt="image" src="https://user-images.githubusercontent.com/63503783/203756888-38c4937f-7e1b-449d-ae8b-1d60d5c0e280.png">
+
+# 3. Apply Model
+We're going to use random forest as the model and calculate the confidence score this time.
+Random forests or random decision forests are an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees (n_estimators=100) at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Reference Wikipedia.
+
+```
+X_train = train_data.drop('Survived', axis = 1)
+y_train = train_data['Survived']
+X_test = test_data.drop('PassengerId', axis = 1).copy()
+#X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size = 0.2, random_state = 0)
+model = RandomForestClassifier(n_estimators = 100)
+
+model.fit(X_train, y_train)
+```
+
+# 4. Predict And Calculate The Score
+Actually, the model has a high score as 98.09, so I suspect there may be a data leak or the way of feature engineering can be improved. For example, the number of passegners for different ages may vary a lot, so I can split ages into groups, instead of remaining it as a continious data. Also, I can add new features like family size, to combine the feature of **Sibsp** and **Parch**, instead of viewing these two features separately. And improvement of data preprocessing and that of the accuracy of the model will on ongoing.
+
+```
+predict = model.predict(X_test)
+score = round(model.score(X_train, y_train)*100, 2)
+
+score
+```
+<img width="58" alt="image" src="https://user-images.githubusercontent.com/63503783/203757167-6152a9a6-ada5-495b-9687-f671cea3d6ee.png">
